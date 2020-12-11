@@ -1,0 +1,1 @@
+cmd_/home/adi/Documents/hashtab_lkm/ht530.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000  --build-id  -T ./scripts/module-common.lds -o /home/adi/Documents/hashtab_lkm/ht530.ko /home/adi/Documents/hashtab_lkm/ht530.o /home/adi/Documents/hashtab_lkm/ht530.mod.o;  true
