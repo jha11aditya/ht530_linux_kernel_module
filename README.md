@@ -9,3 +9,8 @@ TO INSTALL:
 
 TO Test:
 ```./test```
+
+Files: 
+- ht530.c : main lkm source code
+- test_ht530.c : main 4 threaded test driver code
+- test_ht530_0.c: it was for initial testing(not included in submission)
