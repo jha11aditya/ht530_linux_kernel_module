@@ -199,16 +199,7 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
    // cast found ht object
    msg = (char*) &ht_msg;
    }
-   // printk(KERN_INFO "ht530: ZZ-ht ht530_tbl key=[%d]  data=[%d] is in bucket\n", ht_msg.key , ht_msg.data);
 
-   
-//    hash_for_each(ht530_tbl, bkt, curr,  node){
-//    printk(KERN_INFO "ht530: RD-allSRCH ht530_tbl key=[%d]  data=[%d] is in bucket=[%d]\n", curr->key , curr->data, bkt);
-//    }
-
-//   hlist_for_each_entry_safe(curr, tmp, &ht530_tbl[251], node){
-//       printk(KERN_INFO "ht530: [251]RD-allSRCH ht530_tbl key=[%d]  data=[%d] is in bucket \n", curr->key , curr->data);  
-//   }
   
    error_count = copy_to_user(buffer, msg, sizeof(struct ht)); // copy back the result in the same ht struct pointed by buffer
 
@@ -248,32 +239,14 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
    
    printk(KERN_INFO "ht530: Received key: %d data: %d from the user\n", hep->key, hep->data );
    
-   // struct ht_entry * htea = (struct ht_entry *)vmalloc(sizeof(struct ht_entry));
-   // htea->key = 123;
-   // htea->data = 118;
-   // hash_add(ht530_tbl, &htea->node, htea->key);
-  
-   // struct ht_entry * hteb = (struct ht_entry *)vmalloc(sizeof(struct ht_entry));
-   // hteb->key = 123;
-   // hteb->data = 119;
-   // hash_add(ht530_tbl, &hteb->node, hteb->key);
 
-   // struct ht_entry * htec = (struct ht_entry *)vmalloc(sizeof(struct ht_entry));
-   // htec->key = 124;
-   // htec->data = 120;
-   // hash_add(ht530_tbl, &htec->node, htec->key);
-
-   // struct ht_entry hte2;
-   // hte2.key = hep->key+1;
-   // hte2.data = 789;
-   // hash_add(ht530_tbl, &hte2.node, hte2.key);
 
    struct ht_entry * curr;
    struct hlist_node * tmp; 
    bool chk_replace=0;
 
 
-   if(hep->data == 0){
+   if(hep->data == 0){ // Zero data filed means to delete corresponding entry with the supplied key
       hash_for_each_possible_safe(ht530_tbl, curr, tmp,  node, hep->key){
       printk(KERN_INFO "ht530: DELETE key=[%d]  data=[%d]  \n", curr->key , curr->data);
       hash_del(&curr->node);
@@ -290,9 +263,9 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
       }
       }
-      // Else a new entry is created dynamically and chained to one of the hash table bucket
+      // Else a new entry is created dynamically and chained to one of the hash table bucket acc. to the key
       if(chk_replace == 0){
-         struct ht_entry * hte = (struct ht_entry *)vmalloc(sizeof(struct ht_entry));
+         struct ht_entry * hte = (struct ht_entry *)vmalloc(sizeof(struct ht_entry));    
          hte->key = hep->key;
          hte->data = hep->data;
          hash_add(ht530_tbl, &hte->node, hte->key);
@@ -303,7 +276,7 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
    }
 
-
+   /// Just print check functions
    // hash_for_each(ht530_tbl, bkt, curr,  node){
    //    printk(KERN_INFO "ht530: AFTER_wr_ops ht530_tbl key=[%d]  data=[%d] is in bucket=[%d]\n", curr->key , curr->data, bkt);
    // }
@@ -319,10 +292,10 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, lof
 
 static long dev_ioctl(struct file *file, unsigned int ioctl_num, unsigned long ioctl_param){
    int error_count=0;
-   char* mp = (char*)ioctl_param;
+   char* mp = (char*)ioctl_param;   // Casting to char* for read
    char msg[70];
-   copy_from_user(msg, mp, sizeof(struct dump_arg));
-   struct dump_arg* db = (struct dump_arg*) msg;
+   copy_from_user(msg, mp, sizeof(struct dump_arg));  // read from user space
+   struct dump_arg* db = (struct dump_arg*) msg; /// casting back to dump_arg struct
 
    struct ht_entry * curr;
    struct hlist_node * tmp; 
@@ -330,22 +303,22 @@ static long dev_ioctl(struct file *file, unsigned int ioctl_num, unsigned long i
    bool out_ran = 0;
 
    int ind;
-   for( ind=0;ind<8;ind++){
+   for( ind=0;ind<8;ind++){   /// setting dump_arf::obj array data,key values to -1 in case less than 8 values are there in a bucket
       db->object_array[ind].key = -1;
       db->object_array[ind].data = -1;
      
    }
 
-   if( ioctl_num == DUMP){
+   if( ioctl_num == DUMP){    /// If the provided ioctl num equals to the DUMP cmd num
       printk(KERN_INFO "ht530: IOCTL-DUMP function ioctl_num=[%u]", ioctl_num);
       printk(KERN_INFO "ht530: IOCTL-DUMP this bucket n=[%d]", db->n);
 
       int htind = 0;
-      if(db->n >=0 && db->n <= 255){
-         hlist_for_each_entry_safe(curr, tmp, &ht530_tbl[db->n], node){
+      if(db->n >=0 && db->n <= 255){   /// If given bucket no. is within range
+         hlist_for_each_entry_safe(curr, tmp, &ht530_tbl[db->n], node){       // iterate for the nth bucket i.e ht530_tbl[db->n]
                
                printk(KERN_INFO "ht530: IOCTL-DUMP bucket=[%d] key=[%d] data=[%d] \n", db->n ,curr->key , curr->data);
-               if(htind <= 7)
+               if(htind <= 7) // If no. of dumps in a bucket are less than 8 in a bucket then add to the return array in dump arg
                   {
                      db->object_array[htind].key = curr->key;
                      db->object_array[htind].data = curr->data;
@@ -355,28 +328,22 @@ static long dev_ioctl(struct file *file, unsigned int ioctl_num, unsigned long i
                hash_del(&curr->node);
                
         }
-       pdb = (char*)db;
+       pdb = (char*)db;    // cast again to char* for writing back to user space
 
       } else { // n is OUT of range
        pdb = "-1";   
        out_ran = 1;
       }
 
-   
-   // char* objs8 = (char*) db->object_array;
-   // struct ht * dmp8 = (struct ht *) objs8;
-   // for( i=0;i<8;i++){
-   //    printk(KERN_INFO "ht530: IOCTL-DUMP 888 key=[%d] data=[%d] \n", dmp8[i].key ,dmp8[i].data);
-   // }
 
    
-   error_count = copy_to_user(mp, pdb, sizeof(struct dump_arg));
+   error_count = copy_to_user(mp, pdb, sizeof(struct dump_arg));  // write back to user space dump_arg obj pointed by ioctl_param casted to char* by mp above
 
 
 
    if (error_count==0){            // if true then have success
       printk(KERN_INFO "ht530: IOCTL-DUMP Copied %ld characters to the user\n", sizeof(struct dump_arg));
-      if(out_ran == 1){return EINVAL;}
+      if(out_ran == 1){return EINVAL;} // return EINVAL incase out n is out of range 
       return (size_of_message=0);  // clear the position to the start and return 0
    }
    else {
