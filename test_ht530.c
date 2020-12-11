@@ -53,7 +53,7 @@ void * htbl_actions(void* fdp){
 for(int i=0;i<200;i++){ // Insert loop for hash table
    // printf("[%d]\n",rand());
    struct ht he1;
-   he1.key = rand()%100;
+   he1.key = rand()%100;   // some num b/w 0-99 so to get at least minimal search hits below
    he1.data = rand()%100;
    char* stp = (char*) &he1;
    printf("Writing message to the device [%s].\n", stp);
@@ -70,7 +70,7 @@ for(int i=0;i<20000;i++){ // Search loop for hash table
 
  printf("Reading from the device...\n");
    struct ht t1;
-   t1.key = rand()%100;
+   t1.key = rand()%100; // some num b/w 0-99
    char * rcv = (char*) &t1;
    ret = read(fd, rcv, BUFFER_LENGTH);        // Read the response from the LKM
    if (ret < 0){
@@ -88,7 +88,7 @@ for(int i=0;i<20000;i++){ // Search loop for hash table
 }
 
 for(int i=0;i<200;i++){
-   int dmp_bckt = rand()%512;
+   int dmp_bckt = rand()%512; /// we have 256 bkts so about 50% of out of range trials
 
    printf("ioctl DUMP bucket [%d]\n", dmp_bckt);
    struct dump_arg d;
